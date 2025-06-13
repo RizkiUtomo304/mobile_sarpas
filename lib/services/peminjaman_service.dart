@@ -14,15 +14,13 @@ class PeminjamanService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      
+
       if (token == null) {
         throw Exception('Anda belum login. Silakan login terlebih dahulu.');
       }
-      
-      // Gunakan URL API yang benar
-      // Untuk emulator Android, gunakan 10.0.2.2 sebagai pengganti 127.0.0.1
+
       final url = Uri.parse('http://127.0.0.1:8000/api/peminjamans');
-      
+
       final response = await http.get(
         url,
         headers: {
@@ -30,15 +28,14 @@ class PeminjamanService {
           'Authorization': 'Bearer $token',
         },
       );
-      
+
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         List<dynamic> peminjamanData;
-        
-        // Handle berbagai format respons API
+
         if (responseData is List) {
           peminjamanData = responseData;
         } else if (responseData is Map && responseData.containsKey('data')) {
@@ -51,7 +48,7 @@ class PeminjamanService {
         } else {
           peminjamanData = [];
         }
-        
+
         return peminjamanData.map((item) => Peminjaman.fromJson(item)).toList();
       } else {
         throw Exception('Gagal mengambil data peminjaman: ${response.statusCode}');
@@ -61,20 +58,19 @@ class PeminjamanService {
       throw Exception('Error: $e');
     }
   }
-  
+
   // Mengambil detail peminjaman berdasarkan ID
   Future<Peminjaman> getPeminjamanById(int id) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      
+
       if (token == null) {
         throw Exception('Anda belum login. Silakan login terlebih dahulu.');
       }
-      
-      // Gunakan URL API yang benar
+
       final url = Uri.parse('http://127.0.0.1:8000/api/peminjamans/$id');
-      
+
       final response = await http.get(
         url,
         headers: {
@@ -82,10 +78,10 @@ class PeminjamanService {
           'Authorization': 'Bearer $token',
         },
       );
-      
+
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return Peminjaman.fromJson(data);
@@ -97,110 +93,70 @@ class PeminjamanService {
       throw Exception('Error: $e');
     }
   }
-  
+
   // Membuat peminjaman baru
   Future<Map<String, dynamic>> createPeminjaman({
     required String namaPeminjam,
     required int barangId,
     required DateTime tanggalPinjam,
-    required DateTime tanggalKembali,
     required int stok,
     required String keperluan,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      
-      if (token == null) {
-        return {
-          'success': false,
-          'message': 'Anda belum login. Silakan login terlebih dahulu.'
-        };
-      }
-      
-      // Format tanggal untuk API
-      final dateFormat = DateFormat('yyyy-MM-dd');
-      final formattedTanggalPinjam = dateFormat.format(tanggalPinjam);
-      final formattedTanggalKembali = dateFormat.format(tanggalKembali);
-      
-      // Persiapkan data untuk dikirim
+      final formattedTanggalPinjam = _dateFormat.format(tanggalPinjam);
+
       final data = {
         'nama_peminjam': namaPeminjam,
-        'barang_id': barangId.toString(), // Konversi ke string untuk API
+        'barang_id': barangId.toString(),
         'tanggal_pinjam': formattedTanggalPinjam,
-        'tanggal_kembali': formattedTanggalKembali,
-        'stok': stok.toString(), // Konversi ke string untuk API
+        'stok': stok.toString(),
         'keperluan': keperluan,
       };
-      
-      print('Submitting peminjaman with data: $data');
-      
-      // Gunakan URL API yang benar
-      final url = Uri.parse('http://127.0.0.1:8000/api/peminjamans');
-      
-      // Kirim request ke API
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(data),
+
+      print('Sending data to API: $data');
+
+      final response = await _apiService.post(
+        'peminjamans',
+        data,
+        auth: true,
       );
-      
+
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // Peminjaman berhasil
-        try {
-          final responseData = jsonDecode(response.body);
-          return {
-            'success': true,
-            'data': responseData,
-            'message': 'Peminjaman berhasil diajukan'
-          };
-        } catch (e) {
-          return {
-            'success': true,
-            'message': 'Peminjaman berhasil diajukan'
-          };
-        }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Peminjaman berhasil dibuat',
+          'data': responseData
+        };
       } else {
-        // Peminjaman gagal
+        String message = 'Gagal membuat peminjaman';
         try {
           final responseData = jsonDecode(response.body);
-          String message = 'Terjadi kesalahan saat mengajukan peminjaman';
-          
-          if (responseData is Map) {
-            if (responseData.containsKey('message')) {
-              message = responseData['message'].toString();
-            } else if (responseData.containsKey('error')) {
-              message = responseData['error'].toString();
-            }
+          if (responseData is Map && responseData.containsKey('message')) {
+            message = responseData['message'];
           }
-          
-          return {
-            'success': false,
-            'message': message
-          };
         } catch (e) {
-          return {
-            'success': false,
-            'message': 'Terjadi kesalahan: Status ${response.statusCode}'
-          };
+          print('Error parsing response: $e');
         }
+
+        return {
+          'success': false,
+          'message': message,
+        };
       }
     } catch (e) {
       print('Error creating peminjaman: $e');
       return {
         'success': false,
-        'message': 'Terjadi kesalahan: $e'
+        'message': 'Terjadi kesalahan: $e',
       };
     }
   }
 
+  // Mengajukan pengembalian
   Future<Map<String, dynamic>> ajukanPengembalian(
     dynamic peminjamanId, {
     required String namaPengembali,
@@ -209,40 +165,72 @@ class PeminjamanService {
     required String kondisi,
     String? catatan,
   }) async {
-    try { 
-      // Format tanggal untuk API
-      final dateFormat = DateFormat('yyyy-MM-dd');
-      
-      // Gunakan endpoint pengembalian yang benar
+    try {
+      final formattedTglKembali = _dateFormat.format(tglKembali);
+
+      final payload = {
+        'nama_pengembali': namaPengembali,
+        'id_peminjaman': peminjamanId.toString(),
+        'tanggal_kembali': formattedTglKembali,
+        'jumlah_kembali': jumlahKembali.toString(),
+        'kondisi': kondisi.toLowerCase(),
+        'catatan': catatan ?? '',
+      };
+
+      print('Sending payload to API: $payload');
+
       final response = await _apiService.post(
-        'pengembalian', // Endpoint yang benar
-        {
-          'nama_pengembali': namaPengembali,
-          'id_peminjaman': peminjamanId.toString(),
-          'tgl_kembali': dateFormat.format(tglKembali),
-          'jumlah_kembali': jumlahKembali.toString(),
-          'status': 'pending',
-          'kondisi': kondisi,
-          'catatan': catatan ?? '',
-        },
+        'pengembalian',
+        payload,
         auth: true,
       );
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return {
-          'success': true,
-          'message': data['message'] ?? 'Pengembalian berhasil diajukan',
-        };
-      } else {
-        final data = jsonDecode(response.body);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.body == null || response.body.isEmpty) {
         return {
           'success': false,
-          'message': data['message'] ?? 'Gagal mengajukan pengembalian',
+          'message': 'Respons kosong dari server',
+        };
+      }
+
+      try {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData is! Map) {
+          return {
+            'success': false,
+            'message': 'Format respons tidak valid',
+          };
+        }
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return {
+            'success': true,
+            'message': 'Pengembalian berhasil diajukan',
+            'data': responseData
+          };
+        } else {
+          String message = 'Gagal mengajukan pengembalian';
+          if (responseData.containsKey('message')) {
+            message = responseData['message'].toString();
+          }
+
+          return {
+            'success': false,
+            'message': message,
+          };
+        }
+      } catch (e) {
+        print('Error parsing response: $e');
+        return {
+          'success': false,
+          'message': 'Gagal memproses respons: $e',
         };
       }
     } catch (e) {
-      print('Error ajukan pengembalian: $e');
+      print('Error submitting pengembalian: $e');
       return {
         'success': false,
         'message': 'Terjadi kesalahan: $e',
@@ -250,13 +238,14 @@ class PeminjamanService {
     }
   }
 
+  // Mendapatkan detail peminjaman
   Future<Map<String, dynamic>> getPeminjamanDetail(int peminjamanId) async {
     try {
       final response = await _apiService.get(
         'peminjamans/$peminjamanId',
         auth: true,
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {
@@ -285,7 +274,7 @@ class PeminjamanService {
         'pengembalian',
         auth: true,
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {
@@ -300,6 +289,86 @@ class PeminjamanService {
       }
     } catch (e) {
       print('Error getting pengembalian list: $e');
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan: $e',
+      };
+    }
+  }
+
+  // Alternatif pengajuan pengembalian
+  Future<Map<String, dynamic>> ajukanPengembalianAlternatif(
+    dynamic peminjamanId, {
+    required String namaPengembali,
+    required DateTime tglKembali,
+    required int jumlahKembali,
+    required String kondisi,
+    String? catatan,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('Anda belum login. Silakan login terlebih dahulu.');
+      }
+
+      final formattedTglKembali = _dateFormat.format(tglKembali);
+
+      final Map<String, String> payload = {
+        'nama_pengembali': namaPengembali,
+        'id_peminjaman': peminjamanId.toString(),
+        'tanggal_kembali': formattedTglKembali,
+        'jumlah_kembali': jumlahKembali.toString(),
+        'status': 'pending',
+        'kondisi': kondisi.toLowerCase(),
+      };
+
+      if (catatan != null && catatan.isNotEmpty) {
+        payload['catatan'] = catatan;
+      }
+
+      print('Sending direct HTTP request with payload: $payload');
+
+      final url = Uri.parse('http://127.0.0.1:8000/api/pengembalian');
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: payload,
+      );
+
+      print('Direct HTTP response status: ${response.statusCode}');
+      print('Direct HTTP response body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Pengembalian berhasil diajukan',
+          'data': responseData
+        };
+      } else {
+        String message = 'Gagal mengajukan pengembalian';
+        try {
+          final responseData = jsonDecode(response.body);
+          if (responseData is Map && responseData.containsKey('message')) {
+            message = responseData['message'];
+          }
+        } catch (e) {
+          print('Error parsing response: $e');
+        }
+
+        return {
+          'success': false,
+          'message': message,
+        };
+      }
+    } catch (e) {
+      print('Error in ajukanPengembalianAlternatif: $e');
       return {
         'success': false,
         'message': 'Terjadi kesalahan: $e',

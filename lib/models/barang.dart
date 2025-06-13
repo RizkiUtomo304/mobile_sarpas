@@ -37,8 +37,7 @@ class Barang {
       return foto!;
     }
     
-    // Jika foto adalah path relatif, gabungkan dengan base URL
-    // Ganti dengan URL server yang sesuai
-    return 'http://127.0.0.1:8000/${foto!.replaceFirst('/', '')}';
+  
+    return 'http://127.0.0.1:8000/storage/${foto!}';  
   }
 }

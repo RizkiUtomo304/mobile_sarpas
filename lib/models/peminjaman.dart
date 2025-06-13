@@ -2,78 +2,39 @@ import 'package:intl/intl.dart';
 import 'barang.dart';
 class Peminjaman {
   final int id;
-  final int? userId;  // Ubah ke nullable
   final String namaPeminjam;
   final int barangId;
   final DateTime tanggalPinjam;
-  final DateTime? tanggalKembali;  // Ubah ke nullable
+  final DateTime? tanggalKembali; // Gunakan nullable type
   final int stok;
   final String status;
-  final String? keperluan;  // Tambahkan field keperluan
+  final String? keperluan;
   final Barang? barang;
 
   Peminjaman({
     required this.id,
-    this.userId,  // Ubah ke opsional
     required this.namaPeminjam,
     required this.barangId,
     required this.tanggalPinjam,
-    this.tanggalKembali,  // Ubah ke opsional
+    this.tanggalKembali, // Nullable
     required this.stok,
     required this.status,
-    this.keperluan,  // Tambahkan parameter
+    this.keperluan,
     this.barang,
   });
 
   factory Peminjaman.fromJson(Map<String, dynamic> json) {
-    // Helper untuk mengkonversi nilai ke int dengan aman
-    int safeParseInt(dynamic value, {int defaultValue = 0}) {
-      if (value == null) return defaultValue;
-      if (value is int) return value;
-      if (value is String) {
-        return int.tryParse(value) ?? defaultValue;
-      }
-      return defaultValue;
-    }
-    
-    // Helper untuk mengkonversi nilai ke int nullable dengan aman
-    int? safeParseNullableInt(dynamic value) {
-      if (value == null) return null;
-      if (value is int) return value;
-      if (value is String) {
-        return int.tryParse(value);
-      }
-      return null;
-    }
-    
-    // Helper untuk parsing tanggal dengan aman
-    DateTime? parseTanggal(dynamic tanggal) {
-      if (tanggal == null) return null;
-      
-      try {
-        if (tanggal is String) {
-          return DateTime.parse(tanggal);
-        }
-        return null;
-      } catch (e) {
-        print('Error parsing date: $e');
-        return null;
-      }
-    }
-    
-    final tanggalPinjamParsed = parseTanggal(json['tanggal_pinjam']);
-    final tanggalKembaliParsed = parseTanggal(json['tanggal_kembali']);
-    
     return Peminjaman(
-      id: safeParseInt(json['id']),
-      userId: safeParseNullableInt(json['user_id']),
-      namaPeminjam: json['nama_peminjam']?.toString() ?? '',
-      barangId: safeParseInt(json['barang_id']),
-      tanggalPinjam: tanggalPinjamParsed ?? DateTime.now(),
-      tanggalKembali: tanggalKembaliParsed,
-      stok: safeParseInt(json['stok']),
-      status: json['status']?.toString() ?? 'pending',
-      keperluan: json['keperluan']?.toString(),
+      id: json['id'],
+      namaPeminjam: json['nama_peminjam'],
+      barangId: json['barang_id'],
+      tanggalPinjam: DateTime.parse(json['tanggal_pinjam']),
+      // Gunakan null check untuk tanggal_kembali
+      tanggalKembali: json['tanggal_kembali'] != null ? 
+                      DateTime.parse(json['tanggal_kembali']) : null,
+      stok: int.parse(json['stok'].toString()),
+      status: json['status'] ?? 'pending',
+      keperluan: json['keperluan'],
       barang: json['barang'] != null ? Barang.fromJson(json['barang']) : null,
     );
   }
@@ -83,7 +44,6 @@ class Peminjaman {
     
     return {
       'id': id,
-      'user_id': userId,
       'nama_peminjam': namaPeminjam,
       'barang_id': barangId,
       'tanggal_pinjam': dateFormat.format(tanggalPinjam),
@@ -94,54 +54,44 @@ class Peminjaman {
     };
   }
 
-  // Helper untuk mendapatkan status dalam bahasa Indonesia
-  String get statusText {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Menunggu Persetujuan';
-      case 'approved':
-      case 'diterima':
-        return 'Disetujui';
-      case 'rejected':
-      case 'ditolak':
-        return 'Ditolak';
-      case 'borrowed':
-      case 'dipinjam':
-        return 'Sedang Dipinjam';
-      case 'returned':
-      case 'dikembalikan':
-        return 'Sudah Dikembalikan';
-      default:
-        return status;
-    }
-  }
-
-  // Helper untuk mendapatkan warna berdasarkan status
+  // Getter untuk warna status
   int get statusColor {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 0xFFFFA000; // Amber
       case 'approved':
-      case 'diterima':
+      case 'disetujui':
         return 0xFF4CAF50; // Green
+      case 'pending':
+      case 'menunggu':
+        return 0xFFFFA000; // Amber
       case 'rejected':
       case 'ditolak':
         return 0xFFF44336; // Red
-      case 'borrowed':
-      case 'dipinjam':
-        return 0xFF2196F3; // Blue
       case 'returned':
       case 'dikembalikan':
-        return 0xFF4CAF50; // Green
+        return 0xFF2196F3; // Blue
       default:
         return 0xFF9E9E9E; // Grey
     }
   }
 
-  // Helper untuk mengecek apakah peminjaman bisa dibatalkan
-  bool get canBeCancelled {
-    final lowerStatus = status.toLowerCase();
-    return lowerStatus == 'pending';
+  // Getter untuk teks status yang lebih user-friendly
+  String get statusText {
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'disetujui':
+        return 'Disetujui';
+      case 'pending':
+      case 'menunggu':
+        return 'Menunggu';
+      case 'rejected':
+      case 'ditolak':
+        return 'Ditolak';
+      case 'returned':
+      case 'dikembalikan':
+        return 'Dikembalikan';
+      default:
+        return status;
+    }
   }
 }
 

@@ -386,7 +386,12 @@ class _PengembalianPageState extends State<PengembalianPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => PengembalianFormPage(peminjamanId: peminjamanId),
+                                  builder: (context) => PengembalianFormPage(
+                                    peminjamanId: peminjamanId.toString(),
+                                    namaBarang: barang['nama']?.toString() ?? 'Barang tidak diketahui',
+                                    jumlahPinjam: safeParseInt(item['stok']) ?? 1,
+                                    tanggalPinjam: DateTime.tryParse(item['tanggal_pinjam']?.toString() ?? '') ?? DateTime.now(),
+                                  ),
                                 ),
                               ).then((_) {
                                 // Refresh data setelah kembali dari form pengembalian
@@ -542,5 +547,6 @@ class _PengembalianPageState extends State<PengembalianPage> {
     );
   }
 }
+
 
 

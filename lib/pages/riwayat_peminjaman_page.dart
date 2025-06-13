@@ -219,7 +219,7 @@ class _RiwayatPeminjamanPageState extends State<RiwayatPeminjamanPage> {
     }
   }
 
-  String _getFullImageUrl(String? foto) {
+  String _getImageUrl(String? foto) {
     if (foto == null || foto.isEmpty) {
       return 'https://via.placeholder.com/150';
     }
@@ -229,8 +229,8 @@ class _RiwayatPeminjamanPageState extends State<RiwayatPeminjamanPage> {
       return foto;
     }
     
-    // Jika foto adalah path relatif, gabungkan dengan base URL
-    return 'http://127.0.0.1:8000/${foto.replaceFirst('/', '')}';
+    // Gunakan URL base yang sama dengan yang ada di model Barang
+    return 'http://127.0.0.1:8000/storage/$foto';
   }
 
   // UI building methods
@@ -275,33 +275,16 @@ class _RiwayatPeminjamanPageState extends State<RiwayatPeminjamanPage> {
                             topRight: Radius.circular(15),
                           ),
                           child: Image.network(
-                            _getFullImageUrl(barang['foto']),
-                            height: 180,
+                            _getImageUrl(barang['foto']),
+                            height: 150,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                height: 180,
+                                height: 150,
                                 width: double.infinity,
-                                color: Colors.grey[200],
+                                color: Colors.grey[300],
                                 child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                height: 180,
-                                width: double.infinity,
-                                color: Colors.grey[100],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded / 
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                    color: primaryColor,
-                                  ),
-                                ),
                               );
                             },
                           ),
@@ -608,6 +591,10 @@ class _RiwayatPeminjamanPageState extends State<RiwayatPeminjamanPage> {
   }
 }
 
+
+
+
+ 
 
 
 

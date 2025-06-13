@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/barang.dart';
 
-// Ubah port sesuai dengan port server Laravel Anda
+// Ubah URL API sesuai dengan endpoint yang benar di server Laravel
 const String baseUrl = "http://127.0.0.1:8000/api";  // Pastikan port ini benar
 
 class ApiService {
@@ -52,7 +52,7 @@ class ApiService {
   // Ambil daftar barang
   Future<List<Barang>> getBarang() async {
     try {
-      final url = Uri.parse('$baseUrl/barang');
+      final url = Uri.parse('$baseUrl/barangs'); // Gunakan endpoint yang benar
       final headers = await getHeaders(auth: true);
       
       print('Fetching barang from: $url');
@@ -62,21 +62,6 @@ class ApiService {
       
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-
-      // Coba endpoint alternatif jika 404
-      if (response.statusCode == 404) {
-        print('Mencoba endpoint alternatif...');
-        final altUrl = Uri.parse('$baseUrl/barangs'); // Coba endpoint alternatif
-        final altResponse = await http.get(altUrl, headers: headers);
-        
-        print('Alt response status: ${altResponse.statusCode}');
-        print('Alt response body: ${altResponse.body}');
-        
-        if (altResponse.statusCode == 200) {
-          // Gunakan respons dari endpoint alternatif
-          return _parseBarangResponse(altResponse.body);
-        }
-      }
 
       if (response.statusCode == 200) {
         return _parseBarangResponse(response.body);

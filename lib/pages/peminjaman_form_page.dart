@@ -25,25 +25,24 @@ class PeminjamanFormPage extends StatefulWidget {
 
 class _PeminjamanFormPageState extends State<PeminjamanFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final PeminjamanService _peminjamanService = PeminjamanService();
-
-  // Warna tema
-  final Color primaryColor = const Color(0xFF6A1B9A); // Ungu tua
-  final Color secondaryColor = const Color(0xFFD1C4E9); // Ungu muda
-
-  // Form fields
+  final _peminjamanService = PeminjamanService();
+  
   String _namaPeminjam = '';
   DateTime _tanggalPinjam = DateTime.now();
-  DateTime _tanggalKembali = DateTime.now().add(const Duration(days: 7)); // Default 7 days after borrow date
+  // Hapus variabel _tanggalKembali
   String _keperluan = '';
   int _stok = 1;
+  
   bool _isLoading = false;
   String? _errorMessage;
-
+  
+  final Color primaryColor = const Color(0xFF6A1B9A);
+  
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    // Tidak perlu menginisialisasi _tanggalKembali
   }
 
   Future<void> _loadUserData() async {
@@ -165,30 +164,30 @@ class _PeminjamanFormPageState extends State<PeminjamanFormPage> {
                       if (date != null) {
                         setState(() {
                           _tanggalPinjam = date;
-                          // Update tanggal kembali to be 7 days after new tanggal pinjam
-                          _tanggalKembali = date.add(const Duration(days: 7));
+                          // Hapus update tanggal kembali
                         });
                       }
                     },
-                    firstDate: DateTime.now().subtract(const Duration(days: 30)), // Memungkinkan pemilihan tanggal 30 hari ke belakang
-                    lastDate: DateTime.now().add(const Duration(days: 90)), // Memperpanjang rentang hingga 90 hari ke depan
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 90)),
                   ),
                   const SizedBox(height: 16),
 
-                  // Tanggal Kembali
-                  _buildDateField(
-                    label: 'Tanggal Kembali',
-                    value: _tanggalKembali,
-                    onChanged: (date) {
-                      if (date != null) {
-                        setState(() {
-                          _tanggalKembali = date;
-                        });
-                      }
-                    },
-                    firstDate: DateTime.now().subtract(const Duration(days: 30)), // Memungkinkan pemilihan tanggal 30 hari ke belakang
-                    lastDate: DateTime.now().add(const Duration(days: 180)), // Memperpanjang rentang hingga 180 hari ke depan
-                    helperText: 'Tanggal pengembalian barang',
+                  // Pesan durasi maksimal
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber[300]!),
+                    ),
+                    child: Text(
+                      'Maksimal durasi pinjam hanya 1 hari saja. Jika lewat akan dikenakan denda saat mengembalikan barang secara langsung.',
+                      style: GoogleFonts.poppins(
+                        color: Colors.amber[900],
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -499,14 +498,22 @@ class _PeminjamanFormPageState extends State<PeminjamanFormPage> {
       });
 
       try {
+        // Log data yang akan dikirim
+        print('Submitting form with data:');
+        print('Nama Peminjam: $_namaPeminjam');
+        print('Barang ID: ${widget.barangId}');
+        print('Tanggal Pinjam: $_tanggalPinjam');
+        print('Stok: $_stok');
+        print('Keperluan: $_keperluan');
+        
         // Gunakan PeminjamanService untuk membuat peminjaman
         final result = await _peminjamanService.createPeminjaman(
           namaPeminjam: _namaPeminjam,
           barangId: widget.barangId,
           tanggalPinjam: _tanggalPinjam,
-          tanggalKembali: _tanggalKembali,
           stok: _stok,
           keperluan: _keperluan,
+          // Tidak perlu mengirim tanggal kembali
         );
 
         if (!mounted) return;

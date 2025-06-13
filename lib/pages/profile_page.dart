@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
-import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -12,12 +11,10 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // State variables
   String username = 'Pengguna';
   String email = 'user@example.com';
   bool isLoading = true;
-  
-  // Warna tema
+
   final Color primaryColor = const Color(0xFF6A1B9A);
   final Color secondaryColor = const Color(0xFFD1C4E9);
 
@@ -42,7 +39,6 @@ class _ProfilePageState extends State<ProfilePage> {
         email = savedEmail;
         isLoading = false;
       });
-
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -69,24 +65,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal logout: $e')),
       );
-    }
-  }
-
-  // Tambahkan method untuk navigasi ke halaman edit profil
-  Future<void> _navigateToEditProfile() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditProfilePage(
-          username: username,
-          email: email,
-        ),
-      ),
-    );
-    
-    // Jika kembali dengan status berhasil, reload data
-    if (result == true) {
-      _loadUserData();
     }
   }
 
@@ -159,23 +137,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: _buildProfileMenuItem(
-                  icon: Icons.person_outline,
-                  title: 'Edit Profil',
-                  onTap: () {
-                    _navigateToEditProfile();
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: _buildProfileMenuItem(
                   icon: Icons.logout,
                   title: 'Logout',
                   textColor: Colors.red,
@@ -210,6 +171,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-
-
-
